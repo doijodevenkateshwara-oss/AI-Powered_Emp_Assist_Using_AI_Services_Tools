@@ -63,6 +63,42 @@ Sample employees are defined in-memory in `EmployeeTools` (EMP001–EMP004).
 
    Type `exit` to quit.
 
+## How It Works
+
+1. **User input** — `Main.java` reads a natural-language question from the console
+   (e.g. *"What is the annual salary of EMP001?"*) and passes it to the assistant.
+
+2. **AI Service** — `EmployeeAssistant` is a LangChain4j AI service interface.
+   Its `@SystemMessage` tells the model it is an employee assistant and which
+   operations it supports. `AiServices.builder(...)` wires the interface to the
+   `OpenAiChatModel`, the tool objects, and the chat memory.
+
+3. **Tool calling** — LangChain4j inspects the `@Tool`-annotated methods in
+   `EmployeeTools` and exposes them to the model as callable functions. When the
+   model decides a tool is needed, it returns a tool call; LangChain4j executes
+   the Java method locally and feeds the result back to the model.
+
+4. **Response** — the model turns the tool result into a natural-language answer,
+   which is printed to the console.
+
+5. **Conversation memory** — `MessageWindowChatMemory` keeps the last 20
+   messages, so follow-up questions like *"And what about EMP002?"* work without
+   repeating context.
+
+```
+User question
+   │
+   ▼
+EmployeeAssistant.chat()  ──(system prompt + history + tool definitions)──►  OpenAI model
+   │                                                                        │
+   │                                              ◄── tool call (e.g. getEmployeeDetails)
+   ▼
+LangChain4j executes EmployeeTools method locally
+   │
+   ▼
+Tool result sent back to model ──► natural-language answer ──► console
+```
+
 ## Project Structure
 
 ```
